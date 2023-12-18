@@ -4075,7 +4075,7 @@ const getDriveDetails = (callback) => {
   const command =
     process.platform === "win32"
       ? "wmic logicaldisk get size,freespace,caption"
-      : "df -h";
+      : "df -h /";
 
   exec(command, (error, stdout) => {
     if (error) {
@@ -4086,11 +4086,11 @@ const getDriveDetails = (callback) => {
 
     const driveInfoLines =
       process.platform === "win32"
-        ? stdout.split("\n").slice(1) // Skip the header line
+        ? stdout.split("\n").slice(1) 
         : stdout
             .split("\n")
             .slice(1)
-            .filter((line) => line !== ""); // Skip the header line and filter empty lines on Linux
+            .filter((line) => line !== "");
 
     const driveDetails = [];
 
