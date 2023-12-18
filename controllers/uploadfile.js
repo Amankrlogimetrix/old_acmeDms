@@ -4036,29 +4036,82 @@ async function getNetworkUsage() {
     throw error;
   }
 }
+
+// const { exec } = require("child_process");
+
+// const getDriveDetails = (callback) => {
+//   exec("wmic logicaldisk get size,freespace,caption", (error, stdout) => {
+//     if (error) {
+//       console.error(`Error retrieving drive information: ${error.message}`);
+//       callback(error, null);
+//       return;
+//     }
+
+//     const driveInfoLines = stdout.split("\n").slice(1); // Skip the header line
+//     const driveDetails = [];
+
+//     driveInfoLines.forEach((line) => {
+//       const [drive, size, free] = line.trim().split(/\s+/);
+//       if (drive && size && free) {
+//         const totalGB = parseFloat(free) / 1024 ** 3;
+//         const freeGB = parseFloat(size) / 1024 ** 3;
+//         const driveInfo = {
+//           drive: `Disk ${drive}`,
+//           total: totalGB.toFixed(2),
+//           free: freeGB.toFixed(2),
+//         };
+//         driveDetails.push(driveInfo);
+//       }
+//     });
+
+//     callback(null, driveDetails);
+//   });
+// };
 const { exec } = require("child_process");
 
+const isWindows = process.platform === "win32";
+
 const getDriveDetails = (callback) => {
-  exec("wmic logicaldisk get size,freespace,caption", (error, stdout) => {
+  const command =
+    process.platform === "win32"
+      ? "wmic logicaldisk get size,freespace,caption"
+      : "df -h";
+
+  exec(command, (error, stdout) => {
     if (error) {
       console.error(`Error retrieving drive information: ${error.message}`);
       callback(error, null);
       return;
     }
 
-    const driveInfoLines = stdout.split("\n").slice(1); // Skip the header line
+    const driveInfoLines =
+      process.platform === "win32"
+        ? stdout.split("\n").slice(1) // Skip the header line
+        : stdout
+            .split("\n")
+            .slice(1)
+            .filter((line) => line !== ""); // Skip the header line and filter empty lines on Linux
+
     const driveDetails = [];
 
     driveInfoLines.forEach((line) => {
-      const [drive, size, free] = line.trim().split(/\s+/);
-      if (drive && size && free) {
-        const totalGB = parseFloat(free) / 1024 ** 3;
-        const freeGB = parseFloat(size) / 1024 ** 3;
+      const values = line.trim().split(/\s+/);
+      if (values.length >= 6) {
+        const drive = isWindows ? values[0] : values[5];
+        const size = isWindows ? values[1] : values[1];
+        const used = isWindows ? values[2] : values[2];
+        const available = isWindows ? values[3] : values[3];
+        const percentUsed = isWindows ? values[4] : values[4];
+
+        const totalGB = parseFloat(size);
+        const freeGB = parseFloat(available);
+
         const driveInfo = {
-          drive: `Disk ${drive}`,
+          drive,
           total: totalGB.toFixed(2),
           free: freeGB.toFixed(2),
         };
+
         driveDetails.push(driveInfo);
       }
     });
@@ -4066,6 +4119,7 @@ const getDriveDetails = (callback) => {
     callback(null, driveDetails);
   });
 };
+
 router.post("/systemInfo", async (req, res) => {
   try {
     const memoryUsage = getMemoryUsage();
