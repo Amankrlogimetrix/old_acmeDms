@@ -120,6 +120,7 @@ router.post("/docstatus", async (req, res) => {
   try {
     const id = parseInt(req.body.id);
     const user = await doctype.findByPk(id);
+    console.log(user,"userfromdoc")
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }

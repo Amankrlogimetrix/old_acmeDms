@@ -37,7 +37,7 @@ const url = `${process.env.URI}`;
 const { ObjectId } = require("mongodb");
 const workspace = require("../models/add_workspace");
 const Redis = require("ioredis");
-const {extractClientIP} = require("../middleware/clientIp")
+const { extractClientIP } = require("../middleware/clientIp");
 router.use(extractClientIP);
 
 // const redisClient = new Redis({
@@ -298,7 +298,7 @@ router.post(
     // const decodedToken = jwt.verify(token, "acmedms");
     const user_id = req.decodedToken.user.id;
     const user_email = req.decodedToken.user.username;
-    const clientIP = req.clientIP
+    const clientIP = req.clientIP;
 
     // console.log(new Date(), "date_time_of_controllere");
 
@@ -500,7 +500,7 @@ router.post(
           field9: modifiedFields ? modifiedFields.field9 : null,
           field10: modifiedFields ? modifiedFields.field10 : null,
         });
-
+        console.log(newFile, "newFile");
         let uploadedBy;
         if (newFile.guest_id && newFile.user_id === null) {
           uploadedBy = "By Guest";
@@ -583,7 +583,7 @@ router.post("/createfolder", middleware, upload.none(), async (req, res) => {
   try {
     // const token = req.header("Authorization");
     // const decodedToken = jwt.verify(token, "acmedms");
-    const clientIP = req.clientIP
+    const clientIP = req.clientIP;
 
     const email = req.decodedToken.user.username;
     let user_id;
@@ -596,6 +596,7 @@ router.post("/createfolder", middleware, upload.none(), async (req, res) => {
     } else {
       guest_id = req.decodedToken.user.id;
     }
+    console.log(user_details, "userDetails");
 
     // let user_id;
     // // let guest_id;
@@ -717,7 +718,7 @@ router.post("/createfolder", middleware, upload.none(), async (req, res) => {
 router.post("/getfoldernames", middleware, async (req, res) => {
   try {
     const { workspace_name, workspace_id } = req.body;
-    const clientIP = req.clientIP
+    const clientIP = req.clientIP;
 
     const workspace_type1 = await Workspace.findOne({
       where: { workspace_name: workspace_name },
@@ -1614,7 +1615,6 @@ router.post("/getteamspace", middleware, async (req, res) => {
             folder_id: folder.id,
           },
         });
-
         for (const file of files) {
           totalSize += parseInt(file.file_size);
         }
@@ -1646,7 +1646,8 @@ router.post("/getteamspace", middleware, async (req, res) => {
           id: id,
           workspace_name: workspace_name,
         },
-        attributes: ["folder_name"],
+        attributes: ["folder_name","id"],
+        raw:true
       });
 
       folders = await Folder.findAll({
@@ -1657,7 +1658,6 @@ router.post("/getteamspace", middleware, async (req, res) => {
           is_recycle: "false",
         },
       });
-
       files = await FileUpload.findAll({
         where: {
           folder_id: folder_name.id,
@@ -1673,9 +1673,10 @@ router.post("/getteamspace", middleware, async (req, res) => {
           "updatedAt",
           "filemongo_id",
           "user_type",
-          "folder_name",
+          "folder_id",
         ],
       });
+      
     } else {
       if (
         workspace.selected_users.includes(userEmail) &&
@@ -1760,7 +1761,6 @@ router.post("/getteamspace", middleware, async (req, res) => {
               shared_workspace_name: workspace_name,
             },
           });
-          // console.log(share_folder_and_files,"____share_folder_and_files")
           for (const item of share_folder_and_files) {
             let expiry_check;
             if (item.dataValues.expiry_date) {
@@ -1840,12 +1840,6 @@ router.post("/getteamspace", middleware, async (req, res) => {
         files.push(...user_files);
       }
     }
-
-    // const find_user_data = await User.findOne({
-    //   where: {
-    //     id: user_id,
-    //   },
-    // });
 
     async function addSharedInfo(object, sharedData) {
       const find_user_data = await User.findOne({
@@ -1939,7 +1933,6 @@ router.post("/getteamspace", middleware, async (req, res) => {
       object.dataValues.share_with = sharedInfo.share_with;
     }
     const guest_data = await Guest.findAll();
-
     folders.forEach(async (folder) => {
       await addSharedInfo(folder, guest_data);
     });
@@ -1951,7 +1944,8 @@ router.post("/getteamspace", middleware, async (req, res) => {
     await FolderAndFilesSize(folders);
     return res.status(200).json({ folders, files });
   } catch (error) {
-    return res.status(500).send({ status: false, message: "Server Error" });
+    console.log(error)
+    return res.status(500).send({ status: false, message: error.message });
   }
 });
 
@@ -2056,8 +2050,7 @@ router.post("/filedata", middleware, async (req, res) => {
     // const decodedToken = jwt.verify(token, "acmedms");
     const email = req.decodedToken.user.username;
     const file_id = req.body.filemongo_id;
-    const clientIP = req.clientIP
-
+    const clientIP = req.clientIP;
 
     const filesCollection = conn.collection("fs.chunks");
     const file = await filesCollection.findOne({
@@ -2109,7 +2102,7 @@ router.post("/deletefile", middleware, async (req, res) => {
   const chunksCollection = conn.collection("fs.chunks");
   const filesCollection = conn.collection("fs.files");
   const id = req.body.id;
-  const clientIP = req.clientIP
+  const clientIP = req.clientIP;
 
   let fileq = await FileUpload.findOne({
     where: {
@@ -2538,8 +2531,7 @@ router.post("/restore", middleware, async (req, res) => {
   // const decodedToken = jwt.verify(token, "acmedms");
   const id = req.decodedToken.user.id;
   const email = req.decodedToken.user.username;
-  const clientIP = req.clientIP
-
+  const clientIP = req.clientIP;
 
   let current_size;
   if (folder_id && folder_size) {
@@ -2714,7 +2706,7 @@ router.post("/restore", middleware, async (req, res) => {
       return res.status(200).json({ message: "folder restore Successfully" });
     }
   } catch (error) {
-    return res.status(500).json({ message: "Server Error" });
+    return res.status(500).json({ message: error.message });
   }
 });
 // deleted restore
@@ -2728,7 +2720,7 @@ router.post("/deleterestore", middleware, async (req, res) => {
   const id = req.body.id;
   const user_id = req.decodedToken.user.id;
   const email = req.decodedToken.user.username;
-  const clientIP = req.clientIP
+  const clientIP = req.clientIP;
 
   try {
     if (file) {
@@ -2871,7 +2863,7 @@ router.post("/metagetproperties", async (req, res) => {
   const file_name = req.body.file_name;
   const doctype = req.body.doctype;
   const Fields_Name = req.body.fieldnames;
-  const clientIP = req.clientIP
+  const clientIP = req.clientIP;
 
   const modifiedFields = {};
   Object.keys(Fields_Name).forEach((key, index) => {
@@ -2996,7 +2988,7 @@ router.post("/downloadfile", middleware, async (req, res) => {
   try {
     const file_id = req.body.filemongo_id;
     const email = req.decodedToken.user.username;
-    const clientIP = req.clientIP
+    const clientIP = req.clientIP;
 
     const mime = require("mime-types");
     const gfs = Grid(conn.db, mongoose.mongo);
@@ -3303,7 +3295,11 @@ const archiver = require("archiver");
 // const path = require('path');
 
 router.post("/compress", (req, res) => {
-  const folderToZip = path.join(`${process.env.DRIVE}`, `${process.env.FOLDER_NAME}`, "new_created");
+  const folderToZip = path.join(
+    `${process.env.DRIVE}`,
+    `${process.env.FOLDER_NAME}`,
+    "new_created"
+  );
   const zipFileName = "zipped-folder.zip";
 
   // Create a writable stream for the zip file
@@ -3390,7 +3386,7 @@ router.post("/sharedfile", middleware, async (req, res) => {
 });
 
 router.post("/updatefolder", middleware, async (req, res) => {
-  const clientIP = req.clientIP
+  const clientIP = req.clientIP;
 
   try {
     let {
@@ -3719,7 +3715,7 @@ const sendDailyEmail = async (recipients) => {
 
     const transporter = nodemailer.createTransport({
       host: `${process.env.HOST_SMTP}`,
-      port:`${process.env.PORT_SMTP}`,
+      port: `${process.env.PORT_SMTP}`,
       secure: false,
       auth: {
         user: `${process.env.USER_SMTP}`,
@@ -4000,8 +3996,6 @@ function getMemoryUsage() {
   return memoryUsagePercentage.toFixed(2);
 }
 
-
-
 const diskusage = require("diskusage");
 
 // Function to get hard disk space usage by the Node.js application
@@ -4067,6 +4061,7 @@ async function getNetworkUsage() {
 //     callback(null, driveDetails);
 //   });
 // };
+
 const { exec } = require("child_process");
 
 const isWindows = process.platform === "win32";
@@ -4074,9 +4069,8 @@ const isWindows = process.platform === "win32";
 const getDriveDetails = (callback) => {
   const command =
     process.platform === "win32"
-      ? "wmic logicaldisk get size,freespace,caption"
+      ? "wmic logicaldisk where drivetype=3 get size,freespace,caption"
       : "df -h /";
-
   exec(command, (error, stdout) => {
     if (error) {
       console.error(`Error retrieving drive information: ${error.message}`);
@@ -4086,7 +4080,7 @@ const getDriveDetails = (callback) => {
 
     const driveInfoLines =
       process.platform === "win32"
-        ? stdout.split("\n").slice(1) 
+        ? stdout.split("\n").slice(1)
         : stdout
             .split("\n")
             .slice(1)
@@ -4094,29 +4088,45 @@ const getDriveDetails = (callback) => {
 
     const driveDetails = [];
 
-    driveInfoLines.forEach((line) => {
-      const values = line.trim().split(/\s+/);
-      if (values.length >= 6) {
-        const drive = isWindows ? values[0] : values[5];
-        const size = isWindows ? values[1] : values[1];
-        const used = isWindows ? values[2] : values[2];
-        const available = isWindows ? values[3] : values[3];
-        const percentUsed = isWindows ? values[4] : values[4];
+    if (process.platform === "win32") {
+      driveInfoLines.forEach((line) => {
+        const [drive, size, free] = line.trim().split(/\s+/);
+        if (drive && size && free) {
+          const totalGB = parseFloat(free) / 1024 ** 3;
+          const freeGB = parseFloat(size) / 1024 ** 3;
+          const driveInfo = {
+            drive: `Disk ${drive}`,
+            total: totalGB.toFixed(2),
+            free: freeGB.toFixed(2),
+          };
+          driveDetails.push(driveInfo);
+        }
+      });
 
-        const totalGB = parseFloat(size);
-        const freeGB = parseFloat(available);
+      callback(null, driveDetails);
+    } else {
+      driveInfoLines.forEach((line) => {
+        const values = line.trim().split(/\s+/);
+        if (values.length >= 6) {
+          const drive = isWindows ? values[0] : values[5];
+          const size = isWindows ? values[1] : values[1];
+          const used = isWindows ? values[2] : values[2];
+          const available = isWindows ? values[3] : values[3];
+          const percentUsed = isWindows ? values[4] : values[4];
 
-        const driveInfo = {
-          drive,
-          total: totalGB.toFixed(2),
-          free: freeGB.toFixed(2),
-        };
+          const totalGB = parseFloat(size);
+          const freeGB = parseFloat(available);
 
-        driveDetails.push(driveInfo);
-      }
-    });
-
-    callback(null, driveDetails);
+          const driveInfo = {
+            drive: `Disk ${drive}`,
+            total: totalGB.toFixed(2),
+            free: freeGB.toFixed(2),
+          };
+          driveDetails.push(driveInfo);
+        }
+      });
+      callback(null, driveDetails);
+    }
   });
 };
 
@@ -4127,12 +4137,11 @@ router.post("/systemInfo", async (req, res) => {
     let networkUsage = await getNetworkUsage();
 
     const nodeDiskSpaceUsage = getNodeDiskSpaceUsage();
-    
 
     getDriveDetails(async (error, driveDetails) => {
       if (error) {
-        console.error('Error retrieving drive details:', error);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        console.error("Error retrieving drive details:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
       }
 
       const cpuDetails = os.cpus().map((core, index) => {
@@ -4142,7 +4151,8 @@ router.post("/systemInfo", async (req, res) => {
         const totalTime =
           core.times.user + core.times.sys + core.times.idle + core.times.irq;
         let cpuUsage =
-          ((core.times.user + core.times.sys + core.times.irq) / totalTime) * 100;
+          ((core.times.user + core.times.sys + core.times.irq) / totalTime) *
+          100;
         cpuUsage = parseFloat(cpuUsage.toFixed(2));
 
         return {
@@ -4156,28 +4166,28 @@ router.post("/systemInfo", async (req, res) => {
           },
         };
       });
-    const systemInfo = {
-      memoryUsage: `${memoryUsage}`,
-      networkInfo: networkUsage,
-      cpuUsagePercentage: cpuDetails,
-      // nodeMemoryUsage,
-      driveDetails,
-    };
-    let last_10_created = await SystemInfo.findAll({
-      
-      order: [['createdAt', 'DESC']], // Order by createdAt in descending order
-      attributes:['networkInfo','createdAt','id'],
-      limit: 10, 
-    })
-    systemInfo.last_10_doc = last_10_created
+      const systemInfo = {
+        memoryUsage: `${memoryUsage}`,
+        networkInfo: networkUsage,
+        cpuUsagePercentage: cpuDetails,
+        // nodeMemoryUsage,
+        driveDetails,
+      };
+      let last_10_created = await SystemInfo.findAll({
+        order: [["createdAt", "DESC"]], // Order by createdAt in descending order
+        attributes: ["networkInfo", "createdAt", "id"],
+        limit: 10,
+      });
+      systemInfo.last_10_doc = last_10_created;
 
-    return res.status(200).json(systemInfo);
-  });
+      return res.status(200).json(systemInfo);
+    });
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 cron.schedule("*/5 * * * *", async () => {
   try {
@@ -4185,10 +4195,10 @@ cron.schedule("*/5 * * * *", async () => {
     const nodeMemoryUsage = getNodeMemoryUsage();
     const networkUsage = await getNetworkUsage();
 
-    getDriveDetails(async(error, driveDetails) => {
+    getDriveDetails(async (error, driveDetails) => {
       if (error) {
-        console.error('Error retrieving drive details:', error);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        console.error("Error retrieving drive details:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
       }
 
       const cpuDetails = os.cpus().map((core, index) => {
@@ -4198,7 +4208,8 @@ cron.schedule("*/5 * * * *", async () => {
         const totalTime =
           core.times.user + core.times.sys + core.times.idle + core.times.irq;
         let cpuUsage =
-          ((core.times.user + core.times.sys + core.times.irq) / totalTime) * 100;
+          ((core.times.user + core.times.sys + core.times.irq) / totalTime) *
+          100;
         cpuUsage = parseFloat(cpuUsage.toFixed(2));
 
         return {
@@ -4206,19 +4217,150 @@ cron.schedule("*/5 * * * *", async () => {
           usage: cpuUsage,
         };
       });
-    const systemInfo = {
-      memoryUsage: `${memoryUsage}`,
-      networkInfo: networkUsage,
-      cpuUsagePercentage: cpuDetails,
-      // nodeMemoryUsage,
-      driveDetails,
-    };
-    await SystemInfo.create(systemInfo);
-
-  });
+      const systemInfo = {
+        memoryUsage: `${memoryUsage}`,
+        networkInfo: networkUsage,
+        cpuUsagePercentage: cpuDetails,
+        // nodeMemoryUsage,
+        driveDetails,
+      };
+      await SystemInfo.create(systemInfo);
+    });
   } catch (error) {
     console.error("Error storing system information in the database:", error);
   }
+});
+
+let backup_functio = () => {
+  console.log("Cron job running every minute at", moment().format("YYYY-MM-DD HH:mm:ss"));
+  console.log(Date.now(), "todatdate");
+
+  // Ensure the backup directory exists or create it
+  const backupDir = process.env.backupDir;
+  if (!fs.existsSync(backupDir)) {
+    fs.mkdirSync(backupDir);
+    console.log(`Backup directory created at ${backupDir}`);
+  }
+
+  // Generate a timestamp to differentiate backups
+  const timestamp = moment().format("YYYYMMDD_HHmmss");
+
+  // PostgreSQL backup command
+  const pgBackupCommand = `pg_dump --username=${
+    process.env.POSTGRES_USER
+  } --password=${process.env.POSTGRES_PASSWORD} --host=${
+    process.env.POSTGRES_HOST
+  } --port=${process.env.POSTGRES_PORT} --format=custom --file=${path.join(
+    backupDir,
+    `postgres_backup_${timestamp}.dump`
+  )} ${process.env.POSTGRES_DB}`;
+
+  // MongoDB backup command using the URI
+  const mongoBackupCommand = `mongodump --uri="${
+    process.env.URI
+  }" --out=${path.join(backupDir, `mongo_backup_${timestamp}`)}`;
+
+  // Execute PostgreSQL backup command
+  exec(pgBackupCommand, (pgError) => {
+    if (pgError) {
+      console.error("PostgreSQL backup failed:", pgError.message);
+    } else {
+      console.log("PostgreSQL backup completed successfully");
+
+      // Execute MongoDB backup command
+      exec(mongoBackupCommand, (mongoError) => {
+        if (mongoError) {
+          console.error("MongoDB backup failed:", mongoError.message);
+        } else {
+          console.log("MongoDB backup completed successfully");
+
+          // Create a ZIP archive locally
+          const zipFileName = `backup_${timestamp}.zip`;
+          const output = fs.createWriteStream(path.join(backupDir, zipFileName));
+          const archive = archiver("zip", {
+            zlib: { level: 9 }, // Set compression level
+          });
+
+          output.on("close", () => {
+            console.log("ZIP archive created successfully");
+
+            // Determine the OS platform
+            const isWindows = os.platform() === 'win32';
+
+            // Copy ZIP archive to the destination (Windows or Ubuntu)
+            const destinationPath = isWindows ? process.env.networkSharedLocation ||"" : '/path/on/ubuntu/';
+            const copyCommand = isWindows
+              ? `robocopy ${backupDir} "${destinationPath}" ${zipFileName} /MOV`
+              : `cp ${zipFileName} ${path.join(destinationPath, zipFileName)}`;
+
+            exec(copyCommand, (copyError) => {
+              if (copyError) {
+                console.error("File transfer failed:", copyError.message);
+              } else {
+                console.log("ZIP archive transferred successfully");
+              }
+            });
+          });
+
+          archive.on("warning", (err) => {
+            if (err.code === "ENOENT") {
+              console.warn("ZIP archive warning:", err);
+            } else {
+              throw err;
+            }
+          });
+
+          archive.on("error", (err) => {
+            throw err;
+          });
+
+          archive.pipe(output);
+          archive.directory(backupDir, false);
+          archive.finalize();
+        }
+      });
+    }
+  });
+}
+
+
+const executePostgresBackup = () => {
+  const timestamp = moment().format("YYYY/MM/DD, HH:mm");
+  const backupFileName = `postgres_backup_${timestamp}.dump`;
+  const backupFilePath = path.join(`${process.env.backupDir}`, backupFileName);
+
+  const pgDumpCommand = `PGPASSWORD=${process.env.POSTGRES_PASSWORD} pg_dump --username=${process.env.POSTGRES_USER} --host=${process.env.POSTGRES_HOST} --port=${process.env.POSTGRES_PORT} --format=custom --file=${backupFilePath} ${process.env.POSTGRES_DB}`;
+
+  exec(pgDumpCommand, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`PostgreSQL backup failed: ${stderr}`);
+    } else {
+      console.log(`PostgreSQL backup completed successfully: ${backupFileName}`);
+    }
+  });
+};
+
+const executeMongoBackup = () => {
+  const timestamp =  moment().format("YYYY/MM/DD, HH:mm");
+  const backupDirectoryName = `mongo_backup_${timestamp}`;
+  const backupDirectoryPath = path.join(`${process.env.backupDir}`, backupDirectoryName);
+
+  const mongoDumpCommand = `mongodump --uri "${process.env.URI}" --out ${backupDirectoryPath}`;
+
+  exec(mongoDumpCommand, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`MongoDB backup failed: ${stderr}`);
+    } else {
+      console.log(`MongoDB backup completed successfully: ${backupDirectoryName}`);
+    }
+  });
+};
+
+// Schedule daily backups at midnight
+cron.schedule('0 0 * * *', () => {
+  console.log('Running daily backups...');
+  executePostgresBackup();
+  executeMongoBackup();
 });
 
 module.exports = router;
