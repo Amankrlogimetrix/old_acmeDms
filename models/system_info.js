@@ -29,7 +29,6 @@ const SystemInfo = sequelize.define(
     createdAt: {
       type: DataTypes.BIGINT,
       allowNull: false,
-      defaultValue: Date.now(),
     },
   },
   {

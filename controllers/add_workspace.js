@@ -103,7 +103,7 @@ exports.deleteworksapce=async(req,res)=>{
 
 // get workspace with pagi....
 exports.get_workspace = (req, res) => {
-  const page = parseInt(req.body.pageNumber) || 1; // set default page to 1
+  const page = parseInt(req.body.pageNumber) || 1; 
   const limit =  parseInt(req.body.pageSize) || 5 
   const offset = (page - 1) * limit;
 

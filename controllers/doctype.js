@@ -19,7 +19,9 @@ router.post("/createdoctype", async (req, res) => {
 });
 router.post("/doclist", async (req, res) => {
   try {
-    const workspaceAuths = await doctype.findAll({});
+    const workspaceAuths = await doctype.findAll({
+      order: [['createdAt', 'DESC']],
+    });
     return res.status(200).json(workspaceAuths);
   } catch (err) {
     return res.status(500).json({ message: "Server error" });

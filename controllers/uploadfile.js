@@ -38,6 +38,8 @@ const { ObjectId } = require("mongodb");
 const workspace = require("../models/add_workspace");
 const Redis = require("ioredis");
 const { extractClientIP } = require("../middleware/clientIp");
+const os = require("os");
+
 router.use(extractClientIP);
 
 // const redisClient = new Redis({
@@ -3144,12 +3146,32 @@ router.post("/downloadfolders", middleware, async (req, res) => {
       return res.status(404).json({ message: "Folder not found." });
     }
 
-    const folderToZip = path.join(
-      `${process.env.DRIVE}`,
-      `${process.env.FOLDER_NAME}`,
-      `${Foldername.folder_name}`
-    );
+    // const folderToZip = path.join(
+    //   `${process.env.DRIVE}`,
+    //   `${process.env.FOLDER_NAME}`,
+    //   `${Foldername.folder_name}`
+    // );
+    // const folderToZip = path.join(
+    //   process.env.SINGLE_PATH || path.join(process.env.DRIVE, process.env.FOLDER_NAME),
+    //   `${Foldername.folder_name}`
+    // );
 
+    const isWindows = os.platform() === 'win32';
+
+    let folderToZip;
+    
+    if (isWindows) {
+      folderToZip = path.join(
+        process.env.DRIVE, 
+        process.env.FOLDER_NAME , 
+        'new_created'
+      );
+    } else {
+      folderToZip = path.join(
+        process.env.SINGLE_PATH ,
+        'new_created'
+      );
+    }
     // Dynamically set the zip file name based on the folder name
     // const zipFileName = `${Foldername.folder_name}.zip`;
     const zipFileName = "zipped-folder.zip";
@@ -3295,11 +3317,33 @@ const archiver = require("archiver");
 // const path = require('path');
 
 router.post("/compress", (req, res) => {
-  const folderToZip = path.join(
-    `${process.env.DRIVE}`,
-    `${process.env.FOLDER_NAME}`,
-    "new_created"
+  // const folderToZip = path.join(
+  //   `${process.env.DRIVE}`,
+  //   `${process.env.FOLDER_NAME}`,
+  //   "new_created"
+  // );
+  // const folderToZip = path.join(
+  //   process.env.SINGLE_PATH || path.join(process.env.DRIVE, process.env.FOLDER_NAME),
+  //   "new_created"
+  // );
+
+  
+const isWindows = os.platform() === 'win32';
+
+let folderToZip;
+
+if (isWindows) {
+  folderToZip = path.join(
+    process.env.DRIVE, 
+    process.env.FOLDER_NAME , 
+    'new_created'
   );
+} else {
+  folderToZip = path.join(
+    process.env.SINGLE_PATH ,
+    'new_created'
+  );
+}
   const zipFileName = "zipped-folder.zip";
 
   // Create a writable stream for the zip file
@@ -3670,251 +3714,250 @@ router.post("/updatefolder", middleware, async (req, res) => {
   }
 });
 
-const cron = require("node-cron");
-const nodemailer = require("nodemailer");
+// const cron = require("node-cron");
+// const nodemailer = require("nodemailer");
 
-const sendDailyEmail = async (recipients) => {
-  try {
-    const events = await loggs.findAll({
-      where: {
-        category: ["Create", "Delete", "Shared", "Auth", "Upload", "Update"],
-        timestamp: {
-          [Op.gte]: Date.now() - 24 * 60 * 60 * 1000,
-        },
-      },
-    });
+// const sendDailyEmail = async (recipients) => {
+//   try {
+//     const events = await loggs.findAll({
+//       where: {
+//         category: ["Create", "Delete", "Shared", "Auth", "Upload", "Update"],
+//         timestamp: {
+//           [Op.gte]: Date.now() - 24 * 60 * 60 * 1000,
+//         },
+//       },
+//     });
 
-    if (events.length === 0) {
-      console.log("No events to notify");
-      return;
-    }
-    let emailContent =
-      '<table border="1" cellpadding="2" cellspacing="0" style="border-collapse: collapse;">' +
-      "<tr>" +
-      '<th style="background-color: #FFFFCC;">User</th>' +
-      '<th style="background-color: #FFFFCC;">Action</th>' +
-      '<th style="background-color: #FFFFCC;">Timestamp</th>' +
-      "</tr>";
+//     if (events.length === 0) {
+//       console.log("No events to notify");
+//       return;
+//     }
+//     let emailContent =
+//       '<table border="1" cellpadding="2" cellspacing="0" style="border-collapse: collapse;">' +
+//       "<tr>" +
+//       '<th style="background-color: #FFFFCC;">User</th>' +
+//       '<th style="background-color: #FFFFCC;">Action</th>' +
+//       '<th style="background-color: #FFFFCC;">Timestamp</th>' +
+//       "</tr>";
 
-    for (const event of events) {
-      const noTime = parseInt(event.timestamp, 10);
+//     for (const event of events) {
+//       const noTime = parseInt(event.timestamp, 10);
 
-      if (!isNaN(noTime)) {
-        const formattedTimestamp = new Date(noTime).toLocaleString();
-        emailContent += `
-      <tr>
-      <td style="padding-left: 5px; padding-right: 5px; font-size: 12.6px;">${event.user_id}</td>
-      <td style="padding-left: 5px; padding-right: 5px; font-size: 12.6px;">${event.action}</td>
-      <td style="padding-left: 5px; padding-right: 5px; font-size: 12.6px;">${formattedTimestamp}</td>
-      </tr>
+//       if (!isNaN(noTime)) {
+//         const formattedTimestamp = new Date(noTime).toLocaleString();
+//         emailContent += `
+//       <tr>
+//       <td style="padding-left: 5px; padding-right: 5px; font-size: 12.6px;">${event.user_id}</td>
+//       <td style="padding-left: 5px; padding-right: 5px; font-size: 12.6px;">${event.action}</td>
+//       <td style="padding-left: 5px; padding-right: 5px; font-size: 12.6px;">${formattedTimestamp}</td>
+//       </tr>
 
-      `;
-      }
-    }
-    emailContent += "</table>";
+//       `;
+//       }
+//     }
+//     emailContent += "</table>";
 
-    const transporter = nodemailer.createTransport({
-      host: `${process.env.HOST_SMTP}`,
-      port: `${process.env.PORT_SMTP}`,
-      secure: false,
-      auth: {
-        user: `${process.env.USER_SMTP}`,
-        pass: `${process.env.PASS_SMTP}`,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
+//     const transporter = nodemailer.createTransport({
+//       host: `${process.env.HOST_SMTP}`,
+//       port: `${process.env.PORT_SMTP}`,
+//       secure: false,
+//       auth: {
+//         user: `${process.env.USER_SMTP}`,
+//         pass: `${process.env.PASS_SMTP}`,
+//       },
+//       tls: {
+//         rejectUnauthorized: false,
+//       },
+//     });
 
-    const htmlContent = `
-<html>    
-<p>Dear Admin,</p>
-<p>The following changes have been made in the last 24 hours:</p>
-<p>${emailContent}</p>
-<p>Regards,</p>
-<p>ACME DocHub</p>
-</html>`;
+//     const htmlContent = `
+// <html>    
+// <p>Dear Admin,</p>
+// <p>The following changes have been made in the last 24 hours:</p>
+// <p>${emailContent}</p>
+// <p>Regards,</p>
+// <p>ACME DocHub</p>
+// </html>`;
 
-    for (const recipient of recipients) {
-      const mailOptions = {
-        from: "ACME DocHub <noreply.dochub@acmetelepower.in>",
-        to: recipient.email,
-        // to: "logimetrix13@gmail.com",
-        subject: "Daily Event Summary",
-        html: htmlContent,
-      };
+//     for (const recipient of recipients) {
+//       const mailOptions = {
+//         from: "ACME DocHub <noreply.dochub@acmetelepower.in>",
+//         to: recipient.email,
+//         // to: "logimetrix13@gmail.com",
+//         subject: "Daily Event Summary",
+//         html: htmlContent,
+//       };
 
-      const info = await transporter.sendMail(mailOptions);
-      console.log("Daily Email sent:", info.response);
-    }
-  } catch (error) {
-    console.error("Error sending daily email:", error);
-  }
-};
+//       const info = await transporter.sendMail(mailOptions);
+//       console.log("Daily Email sent:", info.response);
+//     }
+//   } catch (error) {
+//     console.error("Error sending daily email:", error);
+//   }
+// };
 
-async function fetchDataFromUserDatabase() {
-  try {
-    const data = await User.findAll({ where: { user_type: "Admin" } });
-    sendDailyEmail(data);
-  } catch (error) {
-    console.error("Error fetching data:", error);
-  }
-}
+// async function fetchDataFromUserDatabase() {
+//   try {
+//     const data = await User.findAll({ where: { user_type: "Admin" } });
+//     sendDailyEmail(data);
+//   } catch (error) {
+//     console.error("Error fetching data:", error);
+//   }
+// }
 
-cron.schedule("59 19 * * *", fetchDataFromUserDatabase);
+// cron.schedule("59 19 * * *", fetchDataFromUserDatabase);
 
-const deactive_user_and_guest = async () => {
-  try {
-    const usersWithValidityDate = await User.findAll({
-      where: {
-        validity_date: {
-          [Sequelize.Op.not]: null,
-        },
-      },
-    });
-    for (const item of usersWithValidityDate) {
-      if (item.dataValues.validity_date) {
-        const dateFromDatabase = new Date(item.validity_date);
-        const timestampInMilliseconds = dateFromDatabase.getTime();
-        let expiry_check = timestampInMilliseconds > Date.now();
-        if (expiry_check == false && item.dataValues.user_status === "true") {
-          await User.update(
-            { user_status: "false" },
-            {
-              where: {
-                id: item.dataValues.id,
-              },
-            }
-          );
-        }
-      }
-    }
+// const deactive_user_and_guest = async () => {
+//   try {
+//     const usersWithValidityDate = await User.findAll({
+//       where: {
+//         validity_date: {
+//           [Sequelize.Op.not]: null,
+//         },
+//       },
+//     });
+//     for (const item of usersWithValidityDate) {
+//       if (item.dataValues.validity_date) {
+//         const dateFromDatabase = new Date(item.validity_date);
+//         const timestampInMilliseconds = dateFromDatabase.getTime();
+//         let expiry_check = timestampInMilliseconds > Date.now();
+//         if (expiry_check == false && item.dataValues.user_status === "true") {
+//           await User.update(
+//             { user_status: "false" },
+//             {
+//               where: {
+//                 id: item.dataValues.id,
+//               },
+//             }
+//           );
+//         }
+//       }
+//     }
 
-    const all_guest_data = await Guest.findAll({
-      where: {
-        guest_email: {
-          [Op.not]: null,
-        },
-      },
-    });
-    const emailDocumentMap = new Map();
+//     const all_guest_data = await Guest.findAll({
+//       where: {
+//         guest_email: {
+//           [Op.not]: null,
+//         },
+//       },
+//     });
+//     const emailDocumentMap = new Map();
 
-    for (let item of all_guest_data) {
-      const current_email = item.guest_email;
-      if (!emailDocumentMap.has(current_email)) {
-        emailDocumentMap.set(current_email, []);
-      }
+//     for (let item of all_guest_data) {
+//       const current_email = item.guest_email;
+//       if (!emailDocumentMap.has(current_email)) {
+//         emailDocumentMap.set(current_email, []);
+//       }
 
-      const dateFromDatabase = new Date(item.expiry_date);
-      const timestampInMilliseconds = dateFromDatabase.getTime();
-      let time = Date.now();
-      const expiry_check = timestampInMilliseconds > Date.now();
-      if (expiry_check) {
-        emailDocumentMap.get(current_email).push(item);
-      }
-    }
-    const emailsWithExpiredDocuments = [];
+//       const dateFromDatabase = new Date(item.expiry_date);
+//       const timestampInMilliseconds = dateFromDatabase.getTime();
+//       let time = Date.now();
+//       const expiry_check = timestampInMilliseconds > Date.now();
+//       if (expiry_check) {
+//         emailDocumentMap.get(current_email).push(item);
+//       }
+//     }
+//     const emailsWithExpiredDocuments = [];
 
-    for (let [email, documents] of emailDocumentMap) {
-      if (documents.length === 0) {
-        emailsWithExpiredDocuments.push(email);
-      }
-    }
-    for (let i = 0; i < emailsWithExpiredDocuments.length; i++) {
-      await Guestsignup.destroy({
-        where: {
-          email: emailsWithExpiredDocuments[i],
-        },
-      });
-    }
-    const recycleBinPolicyMap = new Map();
+//     for (let [email, documents] of emailDocumentMap) {
+//       if (documents.length === 0) {
+//         emailsWithExpiredDocuments.push(email);
+//       }
+//     }
+//     for (let i = 0; i < emailsWithExpiredDocuments.length; i++) {
+//       await Guestsignup.destroy({
+//         where: {
+//           email: emailsWithExpiredDocuments[i],
+//         },
+//       });
+//     }
+//     const recycleBinPolicyMap = new Map();
 
-    async function processDeletedFiles() {
-      try {
-        const allDeletedFiles = await FileUpload.findAll({
-          where: {
-            is_recyclebin: "true",
-            policies_id: {
-              [Op.not]: "",
-            },
-          },
-        });
-        console.log(allDeletedFiles.length, "_______allDeletedFiles");
-        const deletedFolders = await Folder.findAll({
-          where: {
-            is_recycle: "true",
-            policies_id: {
-              [Op.not]: "",
-            },
-          },
-        });
+//     async function processDeletedFiles() {
+//       try {
+//         const allDeletedFiles = await FileUpload.findAll({
+//           where: {
+//             is_recyclebin: "true",
+//             policies_id: {
+//               [Op.not]: "",
+//             },
+//           },
+//         });
+//         console.log(allDeletedFiles.length, "_______allDeletedFiles");
+//         const deletedFolders = await Folder.findAll({
+//           where: {
+//             is_recycle: "true",
+//             policies_id: {
+//               [Op.not]: "",
+//             },
+//           },
+//         });
 
-        allDeletedFiles.push(...deletedFolders);
+//         allDeletedFiles.push(...deletedFolders);
 
-        const currentTimeInSeconds = Math.floor(Date.now() / 1000);
+//         const currentTimeInSeconds = Math.floor(Date.now() / 1000);
 
-        // Load policies for all files at once
-        const fileIds = allDeletedFiles.map((file) =>
-          parseInt(file.policies_id)
-        );
+//         // Load policies for all files at once
+//         const fileIds = allDeletedFiles.map((file) =>
+//           parseInt(file.policies_id)
+//         );
 
-        const filteredFileIds = fileIds.filter((id) => !isNaN(id));
+//         const filteredFileIds = fileIds.filter((id) => !isNaN(id));
 
-        const policies = await Policy.findAll({
-          where: {
-            id: {
-              [Op.in]: filteredFileIds,
-            },
-          },
-        });
-        // console.log(policies,"____________policies")
-        // Populate the policy map
-        policies.forEach((policy) => {
-          recycleBinPolicyMap.set(policy.id, policy.no_of_days);
-        });
+//         const policies = await Policy.findAll({
+//           where: {
+//             id: {
+//               [Op.in]: filteredFileIds,
+//             },
+//           },
+//         });
+//         // console.log(policies,"____________policies")
+//         // Populate the policy map
+//         policies.forEach((policy) => {
+//           recycleBinPolicyMap.set(policy.id, policy.no_of_days);
+//         });
 
-        // Process each file
-        for (const file of allDeletedFiles) {
-          const recycleBinPolicyDays = recycleBinPolicyMap.get(
-            parseInt(file.policies_id, 10)
-          );
+//         // Process each file
+//         for (const file of allDeletedFiles) {
+//           const recycleBinPolicyDays = recycleBinPolicyMap.get(
+//             parseInt(file.policies_id, 10)
+//           );
 
-          if (!recycleBinPolicyDays) {
-            // Policy not found, handle this error or skip the file
-            continue;
-          }
+//           if (!recycleBinPolicyDays) {
+//             // Policy not found, handle this error or skip the file
+//             continue;
+//           }
 
-          const fileDeleteTime =
-            parseInt(file.deleted_at) + recycleBinPolicyDays * 86400;
+//           const fileDeleteTime =
+//             parseInt(file.deleted_at) + recycleBinPolicyDays * 86400;
 
-          if (fileDeleteTime <= currentTimeInSeconds) {
-            const deletedFile = await filesCollection.deleteOne({
-              _id: new ObjectId(file.id),
-            });
-            await chunksCollection.deleteMany({
-              files_id: new ObjectId(file.id),
-            });
-            if (deletedFile) {
-              console.log("file is deleted");
-              await FileUpload.destroy({
-                where: {
-                  id: file.id,
-                },
-              });
-            }
-          }
-        }
-      } catch (error) {
-        console.log("error while delete:", error);
-      }
-    }
-    await processDeletedFiles();
-  } catch (error) {
-    return res.status(500).json({ message: "server error" });
-  }
-};
-cron.schedule("35 18 * * *", deactive_user_and_guest);
-// cron.schedule("12 11 * * *", deactive_user_and_guest);
+//           if (fileDeleteTime <= currentTimeInSeconds) {
+//             const deletedFile = await filesCollection.deleteOne({
+//               _id: new ObjectId(file.id),
+//             });
+//             await chunksCollection.deleteMany({
+//               files_id: new ObjectId(file.id),
+//             });
+//             if (deletedFile) {
+//               console.log("file is deleted");
+//               await FileUpload.destroy({
+//                 where: {
+//                   id: file.id,
+//                 },
+//               });
+//             }
+//           }
+//         }
+//       } catch (error) {
+//         console.log("error while delete:", error);
+//       }
+//     }
+//     await processDeletedFiles();
+//   } catch (error) {
+//     return res.status(500).json({ message: "server error" });
+//   }
+// };
+// cron.schedule("35 18 * * *", deactive_user_and_guest);
 
 const pm2 = require("pm2");
 
@@ -3985,7 +4028,6 @@ router.post("/stopServer", (req, res) => {
   }
 });
 
-const os = require("os");
 
 // // Function to get memory usage
 function getMemoryUsage() {
@@ -4030,38 +4072,6 @@ async function getNetworkUsage() {
     throw error;
   }
 }
-
-// const { exec } = require("child_process");
-
-// const getDriveDetails = (callback) => {
-//   exec("wmic logicaldisk get size,freespace,caption", (error, stdout) => {
-//     if (error) {
-//       console.error(`Error retrieving drive information: ${error.message}`);
-//       callback(error, null);
-//       return;
-//     }
-
-//     const driveInfoLines = stdout.split("\n").slice(1); // Skip the header line
-//     const driveDetails = [];
-
-//     driveInfoLines.forEach((line) => {
-//       const [drive, size, free] = line.trim().split(/\s+/);
-//       if (drive && size && free) {
-//         const totalGB = parseFloat(free) / 1024 ** 3;
-//         const freeGB = parseFloat(size) / 1024 ** 3;
-//         const driveInfo = {
-//           drive: `Disk ${drive}`,
-//           total: totalGB.toFixed(2),
-//           free: freeGB.toFixed(2),
-//         };
-//         driveDetails.push(driveInfo);
-//       }
-//     });
-
-//     callback(null, driveDetails);
-//   });
-// };
-
 const { exec } = require("child_process");
 
 const isWindows = process.platform === "win32";
@@ -4189,178 +4199,90 @@ router.post("/systemInfo", async (req, res) => {
 });
 
 
-cron.schedule("*/5 * * * *", async () => {
-  try {
-    const memoryUsage = getMemoryUsage();
-    const nodeMemoryUsage = getNodeMemoryUsage();
-    const networkUsage = await getNetworkUsage();
+// cron.schedule("*/5 * * * *", async () => {
+//   try {
+//     const memoryUsage = getMemoryUsage();
+//     const nodeMemoryUsage = getNodeMemoryUsage();
+//     const networkUsage = await getNetworkUsage();
 
-    getDriveDetails(async (error, driveDetails) => {
-      if (error) {
-        console.error("Error retrieving drive details:", error);
-        return res.status(500).json({ error: "Internal Server Error" });
-      }
+//     getDriveDetails(async (error, driveDetails) => {
+//       if (error) {
+//         console.error("Error retrieving drive details:", error);
+//         return res.status(500).json({ error: "Internal Server Error" });
+//       }
 
-      const cpuDetails = os.cpus().map((core, index) => {
-        const cpuNumber = Math.floor(index / os.cpus().length) + 1;
-        const coreNumber = (index % os.cpus().length) + 1;
+//       const cpuDetails = os.cpus().map((core, index) => {
+//         const cpuNumber = Math.floor(index / os.cpus().length) + 1;
+//         const coreNumber = (index % os.cpus().length) + 1;
 
-        const totalTime =
-          core.times.user + core.times.sys + core.times.idle + core.times.irq;
-        let cpuUsage =
-          ((core.times.user + core.times.sys + core.times.irq) / totalTime) *
-          100;
-        cpuUsage = parseFloat(cpuUsage.toFixed(2));
+//         const totalTime =
+//           core.times.user + core.times.sys + core.times.idle + core.times.irq;
+//         let cpuUsage =
+//           ((core.times.user + core.times.sys + core.times.irq) / totalTime) *
+//           100;
+//         cpuUsage = parseFloat(cpuUsage.toFixed(2));
 
-        return {
-          core: `${cpuNumber}:${coreNumber}`,
-          usage: cpuUsage,
-        };
-      });
-      const systemInfo = {
-        memoryUsage: `${memoryUsage}`,
-        networkInfo: networkUsage,
-        cpuUsagePercentage: cpuDetails,
-        // nodeMemoryUsage,
-        driveDetails,
-      };
-      await SystemInfo.create(systemInfo);
-    });
-  } catch (error) {
-    console.error("Error storing system information in the database:", error);
-  }
-});
-
-let backup_functio = () => {
-  console.log("Cron job running every minute at", moment().format("YYYY-MM-DD HH:mm:ss"));
-  console.log(Date.now(), "todatdate");
-
-  // Ensure the backup directory exists or create it
-  const backupDir = process.env.backupDir;
-  if (!fs.existsSync(backupDir)) {
-    fs.mkdirSync(backupDir);
-    console.log(`Backup directory created at ${backupDir}`);
-  }
-
-  // Generate a timestamp to differentiate backups
-  const timestamp = moment().format("YYYYMMDD_HHmmss");
-
-  // PostgreSQL backup command
-  const pgBackupCommand = `pg_dump --username=${
-    process.env.POSTGRES_USER
-  } --password=${process.env.POSTGRES_PASSWORD} --host=${
-    process.env.POSTGRES_HOST
-  } --port=${process.env.POSTGRES_PORT} --format=custom --file=${path.join(
-    backupDir,
-    `postgres_backup_${timestamp}.dump`
-  )} ${process.env.POSTGRES_DB}`;
-
-  // MongoDB backup command using the URI
-  const mongoBackupCommand = `mongodump --uri="${
-    process.env.URI
-  }" --out=${path.join(backupDir, `mongo_backup_${timestamp}`)}`;
-
-  // Execute PostgreSQL backup command
-  exec(pgBackupCommand, (pgError) => {
-    if (pgError) {
-      console.error("PostgreSQL backup failed:", pgError.message);
-    } else {
-      console.log("PostgreSQL backup completed successfully");
-
-      // Execute MongoDB backup command
-      exec(mongoBackupCommand, (mongoError) => {
-        if (mongoError) {
-          console.error("MongoDB backup failed:", mongoError.message);
-        } else {
-          console.log("MongoDB backup completed successfully");
-
-          // Create a ZIP archive locally
-          const zipFileName = `backup_${timestamp}.zip`;
-          const output = fs.createWriteStream(path.join(backupDir, zipFileName));
-          const archive = archiver("zip", {
-            zlib: { level: 9 }, // Set compression level
-          });
-
-          output.on("close", () => {
-            console.log("ZIP archive created successfully");
-
-            // Determine the OS platform
-            const isWindows = os.platform() === 'win32';
-
-            // Copy ZIP archive to the destination (Windows or Ubuntu)
-            const destinationPath = isWindows ? process.env.networkSharedLocation ||"" : '/path/on/ubuntu/';
-            const copyCommand = isWindows
-              ? `robocopy ${backupDir} "${destinationPath}" ${zipFileName} /MOV`
-              : `cp ${zipFileName} ${path.join(destinationPath, zipFileName)}`;
-
-            exec(copyCommand, (copyError) => {
-              if (copyError) {
-                console.error("File transfer failed:", copyError.message);
-              } else {
-                console.log("ZIP archive transferred successfully");
-              }
-            });
-          });
-
-          archive.on("warning", (err) => {
-            if (err.code === "ENOENT") {
-              console.warn("ZIP archive warning:", err);
-            } else {
-              throw err;
-            }
-          });
-
-          archive.on("error", (err) => {
-            throw err;
-          });
-
-          archive.pipe(output);
-          archive.directory(backupDir, false);
-          archive.finalize();
-        }
-      });
-    }
-  });
-}
+//         return {
+//           core: `${cpuNumber}:${coreNumber}`,
+//           usage: cpuUsage,
+//         };
+//       });
+//       const systemInfo = {
+//         memoryUsage: `${memoryUsage}`,
+//         networkInfo: networkUsage,
+//         cpuUsagePercentage: cpuDetails,
+//         // nodeMemoryUsage,
+//         driveDetails,
+//       };
+//       await SystemInfo.create(systemInfo);
+//     });
+//   } catch (error) {
+//     console.error("Error storing system information in the database:", error);
+//   }
+// });
 
 
-const executePostgresBackup = () => {
-  const timestamp = moment().format("YYYY/MM/DD, HH:mm");
-  const backupFileName = `postgres_backup_${timestamp}.dump`;
-  const backupFilePath = path.join(`${process.env.backupDir}`, backupFileName);
 
-  const pgDumpCommand = `PGPASSWORD=${process.env.POSTGRES_PASSWORD} pg_dump --username=${process.env.POSTGRES_USER} --host=${process.env.POSTGRES_HOST} --port=${process.env.POSTGRES_PORT} --format=custom --file=${backupFilePath} ${process.env.POSTGRES_DB}`;
 
-  exec(pgDumpCommand, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`PostgreSQL backup failed: ${stderr}`);
-    } else {
-      console.log(`PostgreSQL backup completed successfully: ${backupFileName}`);
-    }
-  });
-};
+// const executePostgresBackup = () => {
+//   const timestamp = moment().format("YYYY/MM/DD, HH:mm");
+//   const backupFileName = `postgres_backup_${timestamp}.dump`;
 
-const executeMongoBackup = () => {
-  const timestamp =  moment().format("YYYY/MM/DD, HH:mm");
-  const backupDirectoryName = `mongo_backup_${timestamp}`;
-  const backupDirectoryPath = path.join(`${process.env.backupDir}`, backupDirectoryName);
+//   const backupFilePath = path.join(`${process.env.backupDir}`, backupFileName);
 
-  const mongoDumpCommand = `mongodump --uri "${process.env.URI}" --out ${backupDirectoryPath}`;
+//   // const pgDumpCommand = `PGPASSWORD=${process.env.POSTGRES_PASSWORD} pg_dump --username=${process.env.POSTGRES_USER} --host=${process.env.POSTGRES_HOST} --port=${process.env.POSTGRES_PORT} --format=custom --file=${backupFilePath} ${process.env.POSTGRES_DB}`;
+//   const pgDumpCommand = `PGPASSWORD=${process.env.POSTGRES_PASSWORD} pg_dump --username=${process.env.POSTGRES_USER} --host=${process.env.POSTGRES_HOST} --port=${process.env.POSTGRES_PORT} --format=plain --file=${backupFilePath} ${process.env.POSTGRES_DB}`;
 
-  exec(mongoDumpCommand, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`MongoDB backup failed: ${stderr}`);
-    } else {
-      console.log(`MongoDB backup completed successfully: ${backupDirectoryName}`);
-    }
-  });
-};
+//   exec(pgDumpCommand, (error, stdout, stderr) => {
+//     if (error) {
+//       console.error(`PostgreSQL backup failed: ${stderr}`);
+//     } else {
+//       console.log(`PostgreSQL backup completed successfully: ${backupFileName}`);
+//     }
+//   });
+// };
 
-// Schedule daily backups at midnight
-cron.schedule('0 0 * * *', () => {
-  console.log('Running daily backups...');
-  executePostgresBackup();
-  executeMongoBackup();
-});
+// const executeMongoBackup = () => {
+//   const timestamp =  moment().format("YYYY/MM/DD, HH:mm");
+//   const backupDirectoryName = `mongo_backup_${timestamp}`;
+//   const backupDirectoryPath = path.join(`${process.env.backupDir}`, backupDirectoryName);
+
+//   const mongoDumpCommand = `mongodump --uri "${process.env.URI}" --out ${backupDirectoryPath}`;
+
+//   exec(mongoDumpCommand, (error, stdout, stderr) => {
+//     if (error) {
+//       console.error(`MongoDB backup failed: ${stderr}`);
+//     } else {
+//       console.log(`MongoDB backup completed successfully: ${backupDirectoryName}`);
+//     }
+//   });
+// };
+
+// // Schedule daily backups at midnight
+// cron.schedule('0 0 * * *', () => {
+//   console.log('Running daily backups...');
+//   executePostgresBackup();
+//   executeMongoBackup();
+// });
 
 module.exports = router;
