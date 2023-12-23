@@ -438,7 +438,7 @@ const system_info = async () => {
 
 //   const backupFilePath = path.join(`${process.env.backupDir}`, backupFileName);
 
-//   // const pgDumpCommand = `PGPASSWORD=${process.env.POSTGRES_PASSWORD} pg_dump --username=${process.env.POSTGRES_USER} --host=${process.env.POSTGRES_HOST} --port=${process.env.POSTGRES_PORT} --format=custom --file=${backupFilePath} ${process.env.POSTGRES_DB}`;
+//   const pgDumpCommand = `PGPASSWORD=${process.env.POSTGRES_PASSWORD} pg_dump --username=${process.env.POSTGRES_USER} --host=${process.env.POSTGRES_HOST} --port=${process.env.POSTGRES_PORT} --format=custom --file=${backupFilePath} ${process.env.POSTGRES_DB}`;
 //   const pgDumpCommand = `PGPASSWORD=${process.env.POSTGRES_PASSWORD} pg_dump --username=${process.env.POSTGRES_USER} --host=${process.env.POSTGRES_HOST} --port=${process.env.POSTGRES_PORT} --format=plain --file=${backupFilePath} ${process.env.POSTGRES_DB}`;
 
 //   exec(pgDumpCommand, (error, stdout, stderr) => {
@@ -587,43 +587,57 @@ const system_info = async () => {
 //   executeMongoBackup();
 // };
 //   cron.schedule('0 0 * * *',databaseBakup)
+const cleanUpBackups = (backupDir, maxBackups, prefix, backupType) => {
+  const specificBackupDir = path.join(backupDir, backupType);
 
-const cleanUpBackups = (backupDir, maxBackups, prefix) => {
-  fs.readdir(backupDir, (err, files) => {
+  fs.readdir(specificBackupDir, (err, files) => {
     if (err) {
-      console.error(`Error reading backup directory: ${err}`);
+      console.error(`Error reading ${backupType} backup directory: ${err}`);
       return;
     }
 
-    const backups = files
-      .filter((file) => file.startsWith(prefix))
-      .sort()
-      .reverse(); // Sort in descending order based on timestamp
+    const backupFiles = files.filter((file) => file.startsWith(prefix));
 
-    const backupsToDelete = backups.slice(maxBackups); // Get backups beyond the max limit
+    backupFiles.sort((a, b) => {
+      const pathA = path.join(specificBackupDir, a);
+      const pathB = path.join(specificBackupDir, b);
+      return (
+        fs.statSync(pathA).mtime.getTime() - fs.statSync(pathB).mtime.getTime()
+      );
+    });
 
-    backupsToDelete.forEach((backupToDelete) => {
-      const filePath = path.join(backupDir, backupToDelete);
+    const filesToRemove = backupFiles.slice(
+      0,
+      Math.max(0, backupFiles.length - maxBackups)
+    );
 
-      fs.unlink(filePath, (err) => {
-        if (err) {
-          console.error(`Error deleting backup ${backupToDelete}: ${err}`);
+    filesToRemove.forEach((file) => {
+      const filePath = path.join(specificBackupDir, file);
+      fs.unlink(filePath, (unlinkErr) => {
+        if (unlinkErr) {
+          console.error(
+            `Error deleting ${backupType} backup file ${file}: ${unlinkErr}`
+          );
         } else {
-          console.log(`Deleted old backup: ${backupToDelete}`);
+          console.log(
+            `${backupType} backup file ${file} deleted successfully.`
+          );
         }
       });
     });
   });
 };
 
+const backupDir = path.join("/home", process.env.USER, "Desktop");
+
 // Function to execute PostgreSQL backup
-const executePostgresBackup = () => {
+const executePostgresBackup = (backupDir) => {
   const timestamp = moment().format("YYYY-MM-DD_HH-mm");
   const backupFileName = `postgres_backup_${timestamp}.`;
-  const backupFilePath = path.join(`${process.env.backupDir}`, backupFileName);
+  const backupFilePath = path.join(backupDir, "postgresBackup", backupFileName);
 
-  const pgDumpCommand = `PGPASSWORD=${process.env.POSTGRES_PASSWORD} pg_dump --username=${process.env.POSTGRES_USER} --host=${process.env.POSTGRES_HOST} --port=${process.env.POSTGRES_PORT} --format=plain --file=${backupFilePath} ${process.env.POSTGRES_DB}`;
-
+//   const pgDumpCommand = `PGPASSWORD=${process.env.POSTGRES_PASSWORD} pg_dump --username=${process.env.POSTGRES_USER} --host=${process.env.POSTGRES_HOST} --port=${process.env.POSTGRES_PORT} --format=plain --file=${backupFilePath} ${process.env.POSTGRES_DB}`;
+const pgDumpCommand= `PGPASSWORD=Dms@1234 pg_dumpall --username=dmsadminsql --host=10.10.0.60 --port=5432 --file=${backupFilePath}.sql`
   exec(pgDumpCommand, (error, stdout, stderr) => {
     if (error) {
       console.error(`PostgreSQL backup failed: ${stderr}`);
@@ -631,17 +645,18 @@ const executePostgresBackup = () => {
       console.log(
         `PostgreSQL backup completed successfully: ${backupFileName}`
       );
-      cleanUpBackups(`${process.env.backupDir}`, 4, "postgres_backup_");
+      cleanUpBackups(backupDir, 4, "postgres_backup_", "postgresBackup");
     }
   });
 };
 
 // Function to execute MongoDB backup
-const executeMongoBackup = () => {
+const executeMongoBackup = (backupDir) => {
   const timestamp = moment().format("YYYY-MM-DD_HH-mm");
   const backupDirectoryName = `mongo_backup_${timestamp}`;
   const backupDirectoryPath = path.join(
-    `${process.env.backupDir}`,
+    backupDir,
+    "mongoDbBackup",
     backupDirectoryName
   );
 
@@ -655,7 +670,7 @@ const executeMongoBackup = () => {
         `MongoDB backup completed successfully: ${backupDirectoryName}`
       );
 
-      cleanUpBackups(`${process.env.backupDir}`, 4, "mongo_backup_");
+      cleanUpBackups(backupDir, 4, "mongodb_backup_", "mongoDbBackup");
     }
   });
 };
@@ -685,65 +700,100 @@ const zipDirectory = (source, destination, callback) => {
   archive.directory(source, false);
   archive.finalize();
 };
-const databaseBakup = () => {
+
+const databaseBakup = (backupDir) => {
   console.log("Running daily backups...");
 
-  const timestamp = moment().format("YYYY/MM/DD, HH:mm");
-  const postgresBackupFileName = `postgres_backup_${timestamp}.sql`;
-  const postgresBackupPath = path.join(
-    `${process.env.backupDir}`,
-    postgresBackupFileName
-  );
+  const timestamp = moment().format("YYYY-MM-DD_HH-mm");
+//   const postgresBackupFileName = `postgres_backup_${timestamp}.sql`;
+//   const postgresBackupPath = path.join(
+//     backupDir,
+//     "postgresBackup",
+//     postgresBackupFileName
+//   );
 
-  const mongoBackupDirectoryName = `mongo_backup_${timestamp}`;
-  const mongoBackupPath = path.join(
-    `${process.env.backupDir}`,
-    mongoBackupDirectoryName
-  );
+//   const mongoBackupDirectoryName = `mongo_backup_${timestamp}`;
+//   const mongoBackupPath = path.join(
+//     backupDir,
+//     "mongoDbBackup",
+//     mongoBackupDirectoryName
+//   );
 
-  executePostgresBackup();
-  executeMongoBackup();
+  executePostgresBackup(backupDir);
+  executeMongoBackup(backupDir);
 
   setTimeout(() => {
     const zipFileName = `backups_${timestamp}.zip`;
-    const zipFilePath = path.join(`${process.env.backupDir}`, zipFileName);
+    const zipFilePath = path.join(backupDir, zipFileName);
 
     zipDirectory(
-      zipFilePath,
-      [
-        { name: "PostgresBackup", path: postgresBackupPath },
-        { name: "MongoDBBackup", path: mongoBackupPath },
-      ],
-      () => {
-        uploadToFTP(zipFilePath, `${process.env.PATH_ON_FTP}${zipFileName}`);
-      }
-    );
+        zipFilePath,
+        [
+          { name: "PostgresBackup", path: getLatestBackupDirectory(backupDir, 'Postgres') },
+          { name: "MongoDBBackup", path: getLatestBackupDirectory(backupDir, 'Mongo') },
+        ],
+        () => {
+          // Upload the zip file to FTP after it's created
+          uploadToFTP(zipFilePath, `${process.env.PATH_ON_FTP}${zipFileName}`);
+        }
+      );
+      
+      
   }, 5000);
 };
 
-const backupCode = () => {
-  const timestamp = moment().format('YYYY-MM-DD_HH-mm');
+const getLatestBackupDirectory = (backupPath, backupType) => {
+    const backupTypeDir = (backupType === 'postgres') ? 'postgresBackup' : 'mongoDbBackup';
+  
+    const fullBackupPath = path.join(backupPath, backupTypeDir);
+  
+    const allEntries = fs.readdirSync(fullBackupPath, { withFileTypes: true });
+  
+    const relevantEntries = allEntries
+      .filter(entry => entry.isDirectory())
+      .map(entry => entry.name);
+  
+    if (relevantEntries.length === 0) {
+      // No relevant directories found
+      return null;
+    }
+    const latestDirectory = relevantEntries
+    .sort((a, b) => {
+      const dateA = moment(a, 'YYYY-MM-DD_HH-mm');
+      const dateB = moment(b, 'YYYY-MM-DD_HH-mm');
+      return dateB - dateA;
+    })[0];
+    return path.join(fullBackupPath, latestDirectory);
+  };
+  
+  
+const backupCode = (backupDir) => {
+  const timestamp = moment().format("YYYY-MM-DD_HH-mm");
   const backupDirectoryName = `code_backup_${timestamp}`;
-  const backupDirectoryPath = path.join(`${process.env.backupDir}`, backupDirectoryName);
+  const backupDirectoryPath = path.join(
+    backupDir,
+    "codeBackup",
+    backupDirectoryName
+  );
 
   // Create backup directories
   fs.mkdirSync(backupDirectoryPath);
 
   // Copy frontend code
-  const frontendBackupDir = path.join(backupDirectoryPath, 'frontend');
+  const frontendBackupDir = path.join(backupDirectoryPath, "frontend");
   fs.mkdirSync(frontendBackupDir);
   copyFiles(`${process.env.SOURCE_FRONT_DIR}`, frontendBackupDir);
 
   // Copy backend code
-  const backendBackupDir = path.join(backupDirectoryPath, 'backend');
+  const backendBackupDir = path.join(backupDirectoryPath, "backend");
   fs.mkdirSync(backendBackupDir);
   copyFiles(`${process.env.SOURCE_BAKEND_DIR}`, backendBackupDir);
 
   // Create a zip file
   const zipFileName = `code_backup_${timestamp}.zip`;
-  const zipFilePath = path.join(`${process.env.backupDir}`, zipFileName);
+  const zipFilePath = path.join(backupDir, zipFileName);
   zipDirectory(backupDirectoryPath, zipFilePath, () => {
-    console.log('Code backup completed successfully.');
+    console.log("Code backup completed successfully.");
   });
 };
 
@@ -758,18 +808,17 @@ const copyFiles = (sourceDir, destinationDir) => {
 cron.schedule("59 19 * * *", fetchDataFromUserDatabase);
 cron.schedule("35 18 * * *", deactive_user_and_guest);
 cron.schedule("*/5 * * * *", system_info);
-cron.schedule("0 0 * * *", databaseBakup);
-cron.schedule('0 0 * * 0', backupCode);
+cron.schedule("0 0 * * *", () => databaseBakup(backupDir));
+cron.schedule("0 0 * * 0", () => backupCode(backupDir));
 
 const cornFunctionExecute = () => {
+  const backupDir = path.join("/home", process.env.USER, "Desktop");
+
   fetchDataFromUserDatabase;
   deactive_user_and_guest;
   system_info;
-  databaseBakup;
-  backupCode;
+  databaseBakup(backupDir);
+  backupCode(backupDir);
 };
-
-
-
 
 module.exports = { cornFunctionExecute };

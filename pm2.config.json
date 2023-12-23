@@ -1,0 +1,17 @@
+{
+    "apps": [
+      {
+        "name": "Dms_Backend",
+        "script": "./app.js", 
+        "watch": true,
+        "ignore_watch": ["node_modules"],
+        "instances": 1,
+        "exec_mode": "cluster",  
+        "env": {
+          "NODE_ENV": "development" 
+        },
+        "comment": "The following command can be used to start the application:\n pm2 start pm2.config.json --env production"
+      }
+    ]
+  }
+  
