@@ -628,7 +628,7 @@ const cleanUpBackups = (backupDir, maxBackups, prefix, backupType) => {
   });
 };
 
-const backupDir = path.join("/home", process.env.USER, "Desktop");
+const backupDir = path.join("/home", "dmsadmin", "Desktop");
 
 // Function to execute PostgreSQL backup
 const executePostgresBackup = (backupDir) => {

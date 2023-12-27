@@ -5,7 +5,6 @@ const extractClientIP = (req, res, next) => {
         const ipv4Address = userIP.includes('::ffff:') ? userIP.split(':').pop() : userIP;
   
         req.clientIP = ipv4Address;
-        console.log('Client IP:', req.clientIP);
         next();
     } catch (error) {
         console.error('Error extracting client IP:', error.message);

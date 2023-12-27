@@ -1264,7 +1264,7 @@ router.post("/getfoldernames", middleware, async (req, res) => {
           attributes: ["user_id", "createdAt"],
           order: [["timestamp", "DESC"]],
         });
-        let storedUpdateLoggs; // Variable to store the value
+        let storedUpdateLoggs; 
 
         if (update_loggs) {
           storedUpdateLoggs = { ...update_loggs.dataValues };
@@ -2537,9 +2537,9 @@ router.post("/restore", middleware, async (req, res) => {
 
   let current_size;
   if (folder_id && folder_size) {
-    current_size = parseInt(folder_size);
+    current_size = parseInt(folder_size)/1024;
   } else if (file_id && file_size) {
-    current_size = parseInt(file_size) / 1024;
+    current_size = parseInt(file_size) /1024;
   }
   try {
     let work_space = await Workspace.findOne({
@@ -2557,6 +2557,7 @@ router.post("/restore", middleware, async (req, res) => {
         total_file_size += parseInt(all_file_size[i].file_size) / 1024;
       }
     }
+    console.log({total_file_size,current_size},"checkfilesize")
     if (work_space.quota <= total_file_size + current_size) {
       return res.status(400).send({
         message: `You Can Not Restore, ${workspace_name} Quota Is Full`,
@@ -3570,7 +3571,7 @@ router.post("/updatefolder", middleware, async (req, res) => {
               updateData.file_description = file_doctype.file_description;
             }
             if (levels || workspace_id) {
-              updateData.levels = levels || "0";
+              updateData.levels = folder_id !== null ? "1"  :"0";//levels || "0";
               updateData.workspace_id = workspace_id;
               updateData.folder_id = folder_id || null;
               updateData.workspace_name = workspace_name;
@@ -4184,8 +4185,8 @@ router.post("/systemInfo", async (req, res) => {
         driveDetails,
       };
       let last_10_created = await SystemInfo.findAll({
-        order: [["createdAt", "DESC"]], // Order by createdAt in descending order
-        attributes: ["networkInfo", "createdAt", "id"],
+        order: [["createdAt", "DESC"]], 
+        attributes: ["networkInfo", "createdAt"],
         limit: 10,
       });
       systemInfo.last_10_doc = last_10_created;
