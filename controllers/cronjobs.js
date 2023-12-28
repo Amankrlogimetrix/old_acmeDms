@@ -432,161 +432,6 @@ const system_info = async () => {
 };
 // cron.schedule("*/2 * * * *",system_info)
 
-// const executePostgresBackup = () => {
-//   const timestamp = moment().format("YYYY/MM/DD, HH:mm");
-//   const backupFileName = `postgres_backup_${timestamp}.dump`;
-
-//   const backupFilePath = path.join(`${process.env.backupDir}`, backupFileName);
-
-//   const pgDumpCommand = `PGPASSWORD=${process.env.POSTGRES_PASSWORD} pg_dump --username=${process.env.POSTGRES_USER} --host=${process.env.POSTGRES_HOST} --port=${process.env.POSTGRES_PORT} --format=custom --file=${backupFilePath} ${process.env.POSTGRES_DB}`;
-//   const pgDumpCommand = `PGPASSWORD=${process.env.POSTGRES_PASSWORD} pg_dump --username=${process.env.POSTGRES_USER} --host=${process.env.POSTGRES_HOST} --port=${process.env.POSTGRES_PORT} --format=plain --file=${backupFilePath} ${process.env.POSTGRES_DB}`;
-
-//   exec(pgDumpCommand, (error, stdout, stderr) => {
-//     if (error) {
-//       console.error(`PostgreSQL backup failed: ${stderr}`);
-//     } else {
-//       console.log(
-//         `PostgreSQL backup completed successfully: ${backupFileName}`
-//       );
-//     }
-//   });
-// };
-
-// const executeMongoBackup = () => {
-//   const timestamp = moment().format("YYYY/MM/DD, HH:mm");
-//   const backupDirectoryName = `mongo_backup_${timestamp}`;
-//   const backupDirectoryPath = path.join(
-//     `${process.env.backupDir}`,
-//     backupDirectoryName
-//   );
-
-//   const mongoDumpCommand = `mongodump --uri "${process.env.URI}" --out ${backupDirectoryPath}`;
-
-//   exec(mongoDumpCommand, (error, stdout, stderr) => {
-//     if (error) {
-//       console.error(`MongoDB backup failed: ${stderr}`);
-//     } else {
-//       console.log(
-//         `MongoDB backup completed successfully: ${backupDirectoryName}`
-//       );
-//     }
-//   });
-// };
-
-// Schedule daily backups at midnight
-
-// const executeMongoBackup = () => {
-//   const timestamp = moment().format('YYYY/MM/DD, HH:mm');
-//   const backupDirectoryName = `mongo_backup_${timestamp}`;
-//   const backupDirectoryPath = path.join(
-//     `${process.env.backupDir}`,
-//     backupDirectoryName
-//   );
-
-//   const mongoDumpCommand = `mongodump --uri "${process.env.URI}" --out ${backupDirectoryPath}`;
-
-//   exec(mongoDumpCommand, async (error, stdout, stderr) => {
-//     if (error) {
-//       console.error(`MongoDB backup failed: ${stderr}`);
-//     } else {
-//       console.log(
-//         `MongoDB backup completed successfully: ${backupDirectoryName}`
-//       );
-
-//         // Compress the backup folder into a zip file
-//         const outputZipPath = path.join(
-//           `${process.env.backupDir}`,
-//           `${backupDirectoryName}.zip`
-//         );
-
-//         const outputZipStream = fs.createWriteStream(outputZipPath);
-//         const archive = archiver('zip');
-
-//         outputZipStream.on('close', () => {
-//           console.log(`Zip file created: ${outputZipPath}`);
-//         });
-
-//         archive.on('error', (err) => {
-//           console.error('Error archiving files:', err);
-//         });
-
-//         archive.pipe(outputZipStream);
-//         archive.directory(backupDirectoryPath, false);
-//         archive.finalize();
-//     }
-//   });
-// };
-
-// const executePostgresBackup = () => {
-//     const timestamp = moment().format("YYYY/MM/DD, HH:mm");
-//     const backupFileName = `postgres_backup_${timestamp}.dump`;
-//     const backupFilePath = path.join(`${process.env.backupDir}`, backupFileName);
-
-//     const pgDumpCommand = `PGPASSWORD=${process.env.POSTGRES_PASSWORD} pg_dump --username=${process.env.POSTGRES_USER} --host=${process.env.POSTGRES_HOST} --port=${process.env.POSTGRES_PORT} --format=plain --file=${backupFilePath} ${process.env.POSTGRES_DB}`;
-
-//     exec(pgDumpCommand, (error, stdout, stderr) => {
-//       if (error) {
-//         console.error(`PostgreSQL backup failed: ${stderr}`);
-//       } else {
-//         console.log(`PostgreSQL backup completed successfully: ${backupFileName}`);
-//         uploadToFTP(backupFilePath, `${process.env.PATH_ON_FTP}${backupFileName}`);
-//       }
-//     });
-//   };
-
-//   const executeMongoBackup = () => {
-//     const timestamp = moment().format("YYYY/MM/DD, HH:mm");
-//     const backupDirectoryName = `mongo_backup_${timestamp}`;
-//     const backupDirectoryPath = path.join(`${process.env.backupDir}`, backupDirectoryName);
-
-//     const mongoDumpCommand = `mongodump --uri "${process.env.URI}" --out ${backupDirectoryPath}`;
-
-//     exec(mongoDumpCommand, (error, stdout, stderr) => {
-//       if (error) {
-//         console.error(`MongoDB backup failed: ${stderr}`);
-//       } else {
-//         console.log(`MongoDB backup completed successfully: ${backupDirectoryName}`);
-//         // Compress the MongoDB backup directory before uploading
-//         const zipFileName = `mongo_backup_${timestamp}.zip`;
-//         const zipFilePath = path.join(`${process.env.backupDir}`, zipFileName);
-//         zipDirectory(backupDirectoryPath, zipFilePath, () => {
-//           uploadToFTP(zipFilePath, `${process.env.PATH_ON_FTP}${zipFileName}`);
-//         });
-//       }
-//     });
-//   };
-
-//   // Function to zip a directory
-//   const zipDirectory = (source, destination, callback) => {
-//     const output = fs.createWriteStream(destination);
-//     const archive = archiver("zip", { zlib: { level: 9 } });
-
-//     archive.on("error", (err) => {
-//       throw err;
-//     });
-
-//     output.on("close", callback);
-
-//     archive.pipe(output);
-//     archive.directory(source, false);
-//     archive.finalize();
-//   };
-
-//   // Function to upload a file to FTP
-//   const uploadToFTP = (localFilePath, remoteFilePath) => {
-//     client.uploadFrom(localFilePath, remoteFilePath).then(() => {
-//       console.log(`File uploaded to FTP: ${remoteFilePath}`);
-//     }).catch((err) => {
-//       console.error(`FTP upload failed: ${err}`);
-//     });
-//   };
-
-// const databaseBakup = () => {
-//   console.log("Running daily backups...");
-//   executePostgresBackup();
-//   executeMongoBackup();
-// };
-//   cron.schedule('0 0 * * *',databaseBakup)
 const cleanUpBackups = (backupDir, maxBackups, prefix, backupType) => {
   const specificBackupDir = path.join(backupDir, backupType);
 
@@ -628,16 +473,17 @@ const cleanUpBackups = (backupDir, maxBackups, prefix, backupType) => {
   });
 };
 
-const backupDir = path.join("/home", "dmsadmin", "Desktop");
+const backupDir = path.join("/home", "dmsadmin", "Desktop", "backup");
 
 // Function to execute PostgreSQL backup
 const executePostgresBackup = (backupDir) => {
   const timestamp = moment().format("YYYY-MM-DD_HH-mm");
-  const backupFileName = `postgres_backup_${timestamp}.`;
+  const backupFileName = `${process.env.POSTGRES_DB}_backup_${timestamp}`;
   const backupFilePath = path.join(backupDir, "postgresBackup", backupFileName);
 
-//   const pgDumpCommand = `PGPASSWORD=${process.env.POSTGRES_PASSWORD} pg_dump --username=${process.env.POSTGRES_USER} --host=${process.env.POSTGRES_HOST} --port=${process.env.POSTGRES_PORT} --format=plain --file=${backupFilePath} ${process.env.POSTGRES_DB}`;
-const pgDumpCommand= `PGPASSWORD=Dms@1234 pg_dumpall --username=dmsadminsql --host=10.10.0.60 --port=5432 --file=${backupFilePath}.sql`
+  //   const pgDumpCommand = `PGPASSWORD=${process.env.POSTGRES_PASSWORD} pg_dump --username=${process.env.POSTGRES_USER} --host=${process.env.POSTGRES_HOST} --port=${process.env.POSTGRES_PORT} --format=plain --file=${backupFilePath} ${process.env.POSTGRES_DB}`;
+  const pgDumpCommand = `PGPASSWORD=Dms@1234 pg_dumpall --username=dmsadminsql --host=10.10.0.60 --port=5432 --file=${backupFilePath}.sql`;
+
   exec(pgDumpCommand, (error, stdout, stderr) => {
     if (error) {
       console.error(`PostgreSQL backup failed: ${stderr}`);
@@ -686,10 +532,10 @@ const uploadToFTP = (localFilePath, remoteFilePath) => {
     });
 };
 
-const zipDirectory = (source, destination, callback) => {
+const zipDirectory = (destination, entries, callback) => {
   const output = fs.createWriteStream(destination);
   const archive = archiver("zip", { zlib: { level: 9 } });
-
+console.log(destination,"destination")
   archive.on("error", (err) => {
     throw err;
   });
@@ -697,122 +543,251 @@ const zipDirectory = (source, destination, callback) => {
   output.on("close", callback);
 
   archive.pipe(output);
-  archive.directory(source, false);
+
+  // Iterate over each entry in the array and add it to the archive
+  entries.forEach((entry) => {
+    if (fs.statSync(entry.path).isDirectory()) {
+      // If it's a directory, add its contents to the archive
+      archive.directory(entry.path, entry.name);
+    } else {
+      // If it's a file, add it directly to the archive
+      archive.file(entry.path, { name: entry.name });
+    }
+  });
+
   archive.finalize();
 };
 
 const databaseBakup = (backupDir) => {
-  console.log("Running daily backups...");
+  try {
+    console.log("Running daily backups...");
 
-  const timestamp = moment().format("YYYY-MM-DD_HH-mm");
-//   const postgresBackupFileName = `postgres_backup_${timestamp}.sql`;
-//   const postgresBackupPath = path.join(
-//     backupDir,
-//     "postgresBackup",
-//     postgresBackupFileName
-//   );
+    const timestamp = moment().format("YYYY-MM-DD_HH-mm");
+    //   const postgresBackupFileName = `postgres_backup_${timestamp}.sql`;
+    //   const postgresBackupPath = path.join(
+    //     backupDir,
+    //     "postgresBackup",
+    //     postgresBackupFileName
+    //   );
 
-//   const mongoBackupDirectoryName = `mongo_backup_${timestamp}`;
-//   const mongoBackupPath = path.join(
-//     backupDir,
-//     "mongoDbBackup",
-//     mongoBackupDirectoryName
-//   );
+    //   const mongoBackupDirectoryName = `mongo_backup_${timestamp}`;
+    //   const mongoBackupPath = path.join(
+    //     backupDir,
+    //     "mongoDbBackup",
+    //     mongoBackupDirectoryName
+    //   );
 
-  executePostgresBackup(backupDir);
-  executeMongoBackup(backupDir);
+    executePostgresBackup(backupDir);
+    executeMongoBackup(backupDir);
 
-  setTimeout(() => {
-    const zipFileName = `backups_${timestamp}.zip`;
-    const zipFilePath = path.join(backupDir, zipFileName);
+    setTimeout(() => {
+      const zipFileName = `DB_backups_${timestamp}.zip`;
+      const zipFilePath = path.join(backupDir, zipFileName);
 
-    zipDirectory(
+      zipDirectory(
         zipFilePath,
         [
-          { name: "PostgresBackup", path: getLatestBackupDirectory(backupDir, 'Postgres') },
-          { name: "MongoDBBackup", path: getLatestBackupDirectory(backupDir, 'Mongo') },
+          {
+            name: "PostgresBackup",
+            path: getLatestBackupDirectory(backupDir, "postgres"),
+          },
+          {
+            name: "MongoDBBackup",
+            path: getLatestBackupDirectory(backupDir, "Mongo"),
+          },
         ],
         () => {
+          console.log("Zip is completed sucessfully.");
           // Upload the zip file to FTP after it's created
-          uploadToFTP(zipFilePath, `${process.env.PATH_ON_FTP}${zipFileName}`);
+          // uploadToFTP(zipFilePath, `${process.env.PATH_ON_FTP}${zipFileName}`);
         }
       );
-      
-      
-  }, 5000);
+    }, 5000);
+  } catch (error) {
+    console.log("error:", error.message);
+  }
 };
 
 const getLatestBackupDirectory = (backupPath, backupType) => {
-    const backupTypeDir = (backupType === 'postgres') ? 'postgresBackup' : 'mongoDbBackup';
-  
+  try {
+    const backupTypeDir =
+      backupType.toLowerCase() === "postgres"
+        ? "postgresBackup"
+        : "mongoDbBackup";
+
     const fullBackupPath = path.join(backupPath, backupTypeDir);
-  
+    console.log(fullBackupPath, "fullBackupPath");
+
     const allEntries = fs.readdirSync(fullBackupPath, { withFileTypes: true });
-  
+    console.log(allEntries, "allEntries");
+
     const relevantEntries = allEntries
-      .filter(entry => entry.isDirectory())
-      .map(entry => entry.name);
-  
+      .filter(
+        (entry) =>
+          entry.isDirectory() || (entry.isFile() && entry.name.endsWith(".sql"))
+      )
+      .map((entry) => entry.name);
+
+    console.log(relevantEntries, "relevantEntries");
+
     if (relevantEntries.length === 0) {
       // No relevant directories found
       return null;
     }
-    const latestDirectory = relevantEntries
-    .sort((a, b) => {
-      const dateA = moment(a, 'YYYY-MM-DD_HH-mm');
-      const dateB = moment(b, 'YYYY-MM-DD_HH-mm');
-      return dateB - dateA;
-    })[0];
-    return path.join(fullBackupPath, latestDirectory);
-  };
-  
-  
-const backupCode = (backupDir) => {
-  const timestamp = moment().format("YYYY-MM-DD_HH-mm");
-  const backupDirectoryName = `code_backup_${timestamp}`;
-  const backupDirectoryPath = path.join(
-    backupDir,
-    "codeBackup",
-    backupDirectoryName
-  );
 
-  // Create backup directories
-  fs.mkdirSync(backupDirectoryPath);
+    try {
+      const latestEntry = relevantEntries.reduce((latest, current) => {
+        const isSqlFile = current.endsWith(".sql");
+        const dateCurrent = parseTimestamp(current, isSqlFile);
+        const dateLatest = parseTimestamp(latest, isSqlFile);
+        return dateCurrent.isAfter(dateLatest) ? current : latest;
+      });
 
-  // Copy frontend code
-  const frontendBackupDir = path.join(backupDirectoryPath, "frontend");
-  fs.mkdirSync(frontendBackupDir);
-  copyFiles(`${process.env.SOURCE_FRONT_DIR}`, frontendBackupDir);
+      if (latestEntry) {
+        return path.join(fullBackupPath, latestEntry);
+      } else {
+        console.log("No valid entries found.");
+        return null;
+      }
+    } catch (error) {
+      console.error(
+        `Error parsing date in backup directories: ${error.message}`
+      );
+      return null;
+    }
+  } catch (error) {
+    console.log("error:", error.message);
+  }
+};
 
-  // Copy backend code
-  const backendBackupDir = path.join(backupDirectoryPath, "backend");
-  fs.mkdirSync(backendBackupDir);
-  copyFiles(`${process.env.SOURCE_BAKEND_DIR}`, backendBackupDir);
+function parseTimestamp(entry, isSqlFile) {
+  try {
+    const timestampRegex = /(\d{4}-\d{2}-\d{2}_\d{2}-\d{2})/;
+    const timestampMatch = entry.match(timestampRegex);
 
-  // Create a zip file
-  const zipFileName = `code_backup_${timestamp}.zip`;
-  const zipFilePath = path.join(backupDir, zipFileName);
-  zipDirectory(backupDirectoryPath, zipFilePath, () => {
-    console.log("Code backup completed successfully.");
+    if (timestampMatch) {
+      const timestamp = timestampMatch[1];
+      const format = isSqlFile ? "YYYY-MM-DD_HH-mm" : "YYYY-MM-DD_HH-mm";
+      return moment(timestamp, format, true);
+    } else {
+      console.error(`Timestamp not found in entry: ${entry}`);
+      return moment(0); // Return a default date in case of an error
+    }
+  } catch (error) {
+    console.log("error:", error.message);
+  }
+}
+const copyFiles = (sourceDir, destinationDir) => {
+  const files = fs.readdirSync(sourceDir);
+
+  files.forEach((file) => {
+    const sourceFilePath = path.join(sourceDir, file);
+    const destinationFilePath = path.join(destinationDir, file);
+
+    const stat = fs.statSync(sourceFilePath);
+
+    if (stat.isFile()) {
+      // Read file content
+      const content = fs.readFileSync(sourceFilePath);
+
+      // Write file content to destination
+      fs.writeFileSync(destinationFilePath, content);
+    } else if (stat.isDirectory()) {
+      // If it's a directory, create the corresponding directory in the destination
+      fs.mkdirSync(destinationFilePath, { recursive: true });
+
+      // Recursively copy files inside the directory
+      copyFiles(sourceFilePath, destinationFilePath);
+    }
   });
 };
 
-const copyFiles = (sourceDir, destinationDir) => {
-  fs.readdirSync(sourceDir).forEach((file) => {
-    const sourceFilePath = path.join(sourceDir, file);
-    const destinationFilePath = path.join(destinationDir, file);
-    fs.copyFileSync(sourceFilePath, destinationFilePath);
-  });
+// const backupCode = (backupDir) => {
+//   try {
+//     const timestamp = moment().format("YYYY-MM-DD_HH-mm");
+//     const backupDirectoryName = `code_backup_${timestamp}`;
+//     const backupDirectoryPath = path.join(
+//       backupDir,
+//       "codeBackup",
+//       backupDirectoryName
+//     );
+//     console.log(backupDirectoryPath, "backupDirectoryPath");
+//     // Create backup directories
+//     fs.mkdirSync(backupDirectoryPath);
+
+//     // Copy frontend code
+//     const frontendBackupDir = path.join(backupDirectoryPath, "frontend");
+//     fs.mkdirSync(frontendBackupDir);
+//     copyFiles(process.env.SOURCE_FRONT_DIR, frontendBackupDir);
+
+//     // Copy backend code
+//     const backendBackupDir = path.join(backupDirectoryPath, "backend");
+//     fs.mkdirSync(backendBackupDir);
+//     copyFiles(process.env.SOURCE_BACKEND_DIR, backendBackupDir);
+
+//     // Create a zip file for frontend
+//     const frontendZipFilePath = path.join(
+//       backupDirectoryPath,
+//       `frontend_backup_${timestamp}.zip`
+//     );
+//     zipDirectory(frontendBackupDir, frontendZipFilePath, () => {
+//       console.log("Frontend code backup completed successfully.");
+//     });
+
+//     // Create a zip file for backend
+//     const backendZipFilePath = path.join(
+//       backupDirectoryPath,
+//       `backend_backup_${timestamp}.zip`
+//     );
+//     zipDirectory(backendBackupDir, backendZipFilePath, () => {
+//       console.log("Backend code backup completed successfully.");
+//     });
+
+//     console.log("Code backup completed successfully.");
+//   } catch (error) {
+//     console.log("Error:", error.message);
+//   }
+// };
+const backupCode = (backupDir) => {
+  try {
+    const timestamp = moment().format("YYYY-MM-DD_HH-mm");
+    const zipFileName = `code_backup_${timestamp}.zip`;
+    const zipFilePath = path.join(backupDir, "codeBackup", zipFileName);
+
+    // Create a zip file for frontend
+    const frontendBackupDir = path.join(backupDir, "frontend");
+    zipDirectory(process.env.SOURCE_FRONT_DIR, frontendBackupDir, () => {
+      console.log("Frontend code backup completed successfully.");
+
+      // Create a zip file for backend
+      const backendBackupDir = path.join(backupDir, "backend");
+      zipDirectory(process.env.SOURCE_BACKEND_DIR, backendBackupDir, () => {
+        console.log("Backend code backup completed successfully.");
+
+        // Combine frontend and backend zip files into a single zip file
+        zipDirectory(backupDir, zipFilePath, () => {
+          console.log("Code backup completed successfully.");
+
+          // Remove temporary frontend and backend zip files and directories
+          fs.rmdirSync(frontendBackupDir, { recursive: true });
+          fs.rmdirSync(backendBackupDir, { recursive: true });
+        });
+      });
+    });
+  } catch (error) {
+    console.log("Error:", error.message);
+  }
 };
 
 cron.schedule("59 19 * * *", fetchDataFromUserDatabase);
 cron.schedule("35 18 * * *", deactive_user_and_guest);
 cron.schedule("*/5 * * * *", system_info);
-cron.schedule("0 0 * * *", () => databaseBakup(backupDir));
-cron.schedule("0 0 * * 0", () => backupCode(backupDir));
+cron.schedule("42 16 * * *", () => databaseBakup(backupDir));
+// cron.schedule("0 0 * * 0", () => backupCode(backupDir));
+cron.schedule("58 17 * * *", () => backupCode(backupDir));
 
 const cornFunctionExecute = () => {
-  const backupDir = path.join("/home", process.env.USER, "Desktop");
+  const backupDir = path.join("/home", "dmsadmin", "Desktop", "backup");
 
   fetchDataFromUserDatabase;
   deactive_user_and_guest;
